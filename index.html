@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEON RHYTHM // CAMPAIGN & ENDLESS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; }
+    body { background: #09090b; color: #fff; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+    
+    #canvas-container { position: relative; width: 440px; height: 680px; box-shadow: 0 0 50px rgba(168, 85, 247, 0.25); border-radius: 16px; overflow: hidden; border: 2px solid #27272a; }
+    canvas { background: #0f0f12; display: block; }
+
+    .screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(9, 9, 11, 0.95);
+      backdrop-filter: blur(8px);
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      gap: 12px; z-index: 10; padding: 20px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: #fff; border: none; padding: 12px 30px;
+      font-size: 1rem; font-weight: 800; border-radius: 10px;
+      cursor: pointer; letter-spacing: 1.5px;
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+      transition: transform 0.1s;
+    }
+    .btn:hover { transform: scale(1.04); }
+
+    .menu-btn {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(39, 39, 42, 0.8); border: 1px solid #3f3f46;
+      color: #a1a1aa; padding: 6px 14px; border-radius: 8px;
+      font-weight: bold; font-size: 0.75rem; cursor: pointer;
+      z-index: 5; backdrop-filter: blur(4px);
+    }
+    .menu-btn:hover { background: rgba(168, 85, 247, 0.3); color: #fff; border-color: #a855f7; }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 4px; }
+    .tab-btn {
+      background: #18181b; border: 1px solid #3f3f46; color: #a1a1aa;
+      padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; cursor: pointer;
+    }
+    .tab-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 247, 0.25); }
+
+    .level-list { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 320px; }
+    .level-card {
+      background: #18181b; border: 1px solid #27272a; border-radius: 8px;
+      padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .level-card:hover { border-color: #ec4899; background: #201a24; }
+    .level-name { font-weight: 800; font-size: 0.9rem; }
+    .level-score { font-weight: 900; font-size: 0.85rem; color: #a855f7; }
+
+    .key-badge {
+      background: #18181b; border: 1px solid #3f3f46;
+      padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container">
+    <button class="menu-btn" id="menu-btn" onclick="goToMenu()" style="display: none;">EXIT TO MENU</button>
+    <canvas id="gameCanvas" width="440" height="680"></canvas>
+    
+    <div class="screen" id="start-screen">
+      <h1 style="font-size: 2rem; font-weight: 900; background: linear-gradient(to right, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">NEON RHYTHM</h1>
+      
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('CAMPAIGN', this)">5-LEVEL CAMPAIGN (DFJK)</button>
+        <button class="tab-btn" onclick="switchTab('ENDLESS', this)">AI ENDLESS</button>
+      </div>
+
+      <div id="campaign-view" class="level-list">
+        </div>
+
+      <div id="endless-view" class="level-list" style="display: none;">
+        <div class="level-card" onclick="startEndlessMode('2KEY_LEFT')">
+          <div><div class="level-name">LEFT HAND ONLY</div><div style="font-size:0.7rem; color:#a1a1aa;">2-Column (D / F)</div></div>
+          <span style="color:#38bdf8; font-weight:bold;">PLAY</span>
+        </div>
+        <div class="level-card" onclick="startEndlessMode('2KEY_RIGHT')">
+          <div><div class="level-name">RIGHT HAND ONLY</div><div style="font-size:0.7rem; color:#a1a1aa;">2-Column (J / K)</div></div>
+          <span style="color:#fbbf24; font-weight:bold;">PLAY</span>
+        </div>
+        <div class="level-card" onclick="startEndlessMode('4KEY')">
+          <div><div class="level-name">CLASSIC 4-KEY</div><div style="font-size:0.7rem; color:#a1a1aa;">4-Column (D F J K)</div></div>
+          <span style="color:#ec4899; font-weight:bold;">PLAY</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" id="result-screen" style="display: none;">
+      <h2 id="res-title" style="font-size: 1.8rem; font-weight: 900; color: #a855f7;">LEVEL COMPLETE</h2>
+      <div style="font-size: 3rem; font-weight: 900; margin: 10px 0;" id="res-score">95 / 100</div>
+      <p id="res-best" style="color: #a1a1aa; font-size: 0.85rem;">PERSONAL BEST: 95 / 100</p>
+      <button class="btn" style="margin-top: 15px;" onclick="goToMenu()">CONTINUE</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // --- AUDIO SYNTHESIZER ---
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playSound(freq, type, duration, gainVal = 0.1) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // --- CAMPAIGN LEVEL DEFINITIONS ---
+    const CAMPAIGN_LEVELS = [
+      { name: '1. EASY', speed: 380, interval: 0.55, totalNotes: 35, doubleChance: 0.0, color: '#34d399' },
+      { name: '2. MEDIUM', speed: 440, interval: 0.42, totalNotes: 55, doubleChance: 0.15, color: '#38bdf8' },
+      { name: '3. HARD', speed: 500, interval: 0.32, totalNotes: 80, doubleChance: 0.25, color: '#fbbf24' },
+      { name: '4. EXTREME', speed: 560, interval: 0.24, totalNotes: 110, doubleChance: 0.35, color: '#f43f5e' },
+      { name: '5. CATASTROPHIC', speed: 640, interval: 0.17, totalNotes: 150, doubleChance: 0.45, color: '#a855f7' }
+    ];
+
+    const PRESETS = {
+      '2KEY_LEFT':  [{ key: 'KeyD', label: 'D', color: '#38bdf8' }, { key: 'KeyF', label: 'F', color: '#34d399' }],
+      '2KEY_RIGHT': [{ key: 'KeyJ', label: 'J', color: '#fbbf24' }, { key: 'KeyK', label: 'K', color: '#f43f5e' }],
+      '4KEY':       [{ key: 'KeyD', label: 'D', color: '#38bdf8' }, { key: 'KeyF', label: 'F', color: '#34d399' }, { key: 'KeyJ', label: 'J', color: '#fbbf24' }, { key: 'KeyK', label: 'K', color: '#f43f5e' }]
+    };
+
+    let gameMode = 'CAMPAIGN'; // 'CAMPAIGN' or 'ENDLESS'
+    let currentCampaignIdx = 0;
+    let selectedPresetKey = '4KEY';
+
+    let currentLanes = [];
+    let activeLanes = [];
+    const TARGET_Y = 570;
+
+    let isPlaying = false;
+    let score = 0;
+    let combo = 0;
+    let notes = [];
+    let particles = [];
+    let judgmentText = { text: '', color: '#fff', alpha: 0, scale: 1 };
+    let aiStatusText = { text: '', color: '#a855f7', timer: 0 };
+
+    let spawnedNotesCount = 0;
+    let maxPossiblePoints = 0;
+    let levelSpeed = 480;
+    let levelInterval = 0.4;
+
+    let lastTime = performance.now();
+    let beatTimer = 0;
+
+    // --- AI DIRECTOR (ENDLESS MODE) ---
+    const AI = {
+      level: 1, recentHistory: [], maxHistory: 20,
+      subdivision: 0.40, doubleChance: 0.0
+    };
+
+    function recordEndlessAccuracy(scoreVal) {
+      if (gameMode !== 'ENDLESS') return;
+      AI.recentHistory.push(scoreVal);
+      if (AI.recentHistory.length > AI.maxHistory) AI.recentHistory.shift();
+      
+      const sum = AI.recentHistory.reduce((a, b) => a + b, 0);
+      const avg = sum / AI.recentHistory.length;
+      let targetLevel = Math.min(10, Math.max(1, Math.ceil(avg * 10)));
+
+      if (targetLevel !== AI.level) {
+        AI.level = targetLevel;
+        triggerAIStatus(`AI DENSITY LVL: ${AI.level}`, '#a855f7');
+      }
+
+      AI.subdivision = Math.max(0.16, 0.42 - (AI.level * 0.026));
+      AI.doubleChance = Math.min(0.40, (AI.level - 1) * 0.045);
+    }
+
+    function triggerAIStatus(text, color) {
+      aiStatusText = { text: text, color: color, timer: 1.5 };
+    }
+
+    // --- UI MENU NAVIGATION ---
+    function switchTab(tab, btnEl) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+      document.getElementById('campaign-view').style.display = tab === 'CAMPAIGN' ? 'flex' : 'none';
+      document.getElementById('endless-view').style.display = tab === 'ENDLESS' ? 'flex' : 'none';
+    }
+
+    function renderCampaignList() {
+      const container = document.getElementById('campaign-view');
+      container.innerHTML = '';
+      CAMPAIGN_LEVELS.forEach((lvl, idx) => {
+        const savedScore = localStorage.getItem(`neon_lvl_${idx}`) || '--';
+        const card = document.createElement('div');
+        card.className = 'level-card';
+        card.onclick = () => startCampaignLevel(idx);
+        card.innerHTML = `
+          <div>
+            <div class="level-name" style="color:${lvl.color};">${lvl.name}</div>
+            <div style="font-size:0.7rem; color:#a1a1aa;">${lvl.totalNotes} Notes</div>
+          </div>
+          <div class="level-score">${savedScore} / 100</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function setupLanePositions(presetKey) {
+      const preset = PRESETS[presetKey];
+      const numLanes = preset.length;
+      const laneWidth = numLanes === 2 ? 110 : 85;
+      const gap = 16;
+      const totalWidth = (numLanes * laneWidth) + ((numLanes - 1) * gap);
+      const startX = (canvas.width - totalWidth) / 2;
+
+      currentLanes = preset.map((p, index) => ({
+        ...p, width: laneWidth, x: startX + index * (laneWidth + gap)
+      }));
+      activeLanes = new Array(numLanes).fill(false);
+    }
+
+    function startCampaignLevel(idx) {
+      gameMode = 'CAMPAIGN';
+      currentCampaignIdx = idx;
+      selectedPresetKey = '4KEY';
+      const lvl = CAMPAIGN_LEVELS[idx];
+
+      levelSpeed = lvl.speed;
+      levelInterval = lvl.interval;
+      spawnedNotesCount = 0;
+      maxPossiblePoints = lvl.totalNotes * 100;
+
+      initGameSession();
+    }
+
+    function startEndlessMode(presetKey) {
+      gameMode = 'ENDLESS';
+      selectedPresetKey = presetKey;
+      levelSpeed = 480;
+      AI.level = 1; AI.recentHistory = [];
+      levelInterval = AI.subdivision;
+
+      initGameSession();
+    }
+
+    function initGameSession() {
+      initAudio();
+      setupLanePositions(selectedPresetKey);
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('result-screen').style.display = 'none';
+      document.getElementById('menu-btn').style.display = 'block';
+
+      score = 0; combo = 0; notes = []; particles = [];
+      beatTimer = 0; isPlaying = true;
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function goToMenu() {
+      isPlaying = false;
+      document.getElementById('start-screen').style.display = 'flex';
+      document.getElementById('result-screen').style.display = 'none';
+      document.getElementById('menu-btn').style.display = 'none';
+      renderCampaignList();
+    }
+
+    // --- INPUT LISTENERS ---
+    window.addEventListener('keydown', (e) => {
+      if (!isPlaying) return;
+      currentLanes.forEach((lane, index) => {
+        if (e.code === lane.key && !activeLanes[index]) {
+          activeLanes[index] = true;
+          checkHit(index);
+        }
+      });
+    });
+
+    window.addEventListener('keyup', (e) => {
+      currentLanes.forEach((lane, index) => {
+        if (e.code === lane.key) activeLanes[index] = false;
+      });
+    });
+
+    function checkHit(laneIndex) {
+      const lane = currentLanes[laneIndex];
+      let hitFound = false;
+
+      for (let i = 0; i < notes.length; i++) {
+        const note = notes[i];
+        if (note.lane === laneIndex && !note.hit) {
+          const distance = Math.abs(note.y - TARGET_Y);
+
+          if (distance < 65) {
+            note.hit = true;
+            hitFound = true;
+            let points = 0;
+
+            if (distance < 18) {
+              setJudgment('PERFECT!', '#34d399'); points = 100;
+              recordEndlessAccuracy(1.0); playSound(880, 'sine', 0.08, 0.15);
+            } else if (distance < 38) {
+              setJudgment('GREAT', '#fbbf24'); points = 60;
+              recordEndlessAccuracy(0.7); playSound(660, 'sine', 0.08, 0.12);
+            } else {
+              setJudgment('GOOD', '#38bdf8'); points = 30;
+              recordEndlessAccuracy(0.4); playSound(440, 'sine', 0.08, 0.1);
+            }
+
+            combo++; score += points;
+            spawnParticles(lane.x + lane.width / 2, TARGET_Y, lane.color);
+            break;
+          }
+        }
+      }
+
+      if (!hitFound) {
+        recordEndlessAccuracy(0.0);
+        playSound(150, 'sawtooth', 0.08, 0.05);
+      }
+    }
+
+    function setJudgment(text, color) {
+      judgmentText = { text: text, color: color, alpha: 1.0, scale: 1.3 };
+    }
+
+    function spawnParticles(x, y, color) {
+      for (let i = 0; i < 12; i++) {
+        particles.push({
+          x: x, y: y,
+          vx: (Math.random() - 0.5) * 260, vy: (Math.random() - 0.5) * 260,
+          life: 1.0, color: color, size: Math.random() * 4 + 2
+        });
+      }
+    }
+
+    // --- NOTE SPAWNER ---
+    function spawnPattern() {
+      const numLanes = currentLanes.length;
+      if (gameMode === 'CAMPAIGN') {
+        const lvl = CAMPAIGN_LEVELS[currentCampaignIdx];
+        if (spawnedNotesCount >= lvl.totalNotes) return;
+
+        let lane1 = Math.floor(Math.random() * numLanes);
+        notes.push({ lane: lane1, y: -30, hit: false, missed: false });
+        spawnedNotesCount++;
+
+        if (Math.random() < lvl.doubleChance && spawnedNotesCount < lvl.totalNotes) {
+          let lane2 = (lane1 + 1) % numLanes;
+          notes.push({ lane: lane2, y: -30, hit: false, missed: false });
+          spawnedNotesCount++;
+        }
+      } else {
+        levelInterval = AI.subdivision;
+        let lane1 = Math.floor(Math.random() * numLanes);
+        notes.push({ lane: lane1, y: -30, hit: false, missed: false });
+
+        if (Math.random() < AI.doubleChance) {
+          let lane2 = (lane1 + 1) % numLanes;
+          notes.push({ lane: lane2, y: -30, hit: false, missed: false });
+        }
+      }
+      playSound(220, 'triangle', 0.04, 0.03);
+    }
+
+    function updateSpawner(dt) {
+      beatTimer += dt;
+      if (beatTimer >= levelInterval) {
+        beatTimer -= levelInterval;
+        spawnPattern();
+      }
+    }
+
+    function finishCampaignLevel() {
+      isPlaying = false;
+      const finalScore = Math.min(100, Math.max(0, Math.round((score / maxPossiblePoints) * 100)));
+      
+      const prevBest = parseInt(localStorage.getItem(`neon_lvl_${currentCampaignIdx}`) || '0', 10);
+      if (finalScore > prevBest) {
+        localStorage.setItem(`neon_lvl_${currentCampaignIdx}`, finalScore);
+      }
+
+      document.getElementById('res-title').innerText = CAMPAIGN_LEVELS[currentCampaignIdx].name;
+      document.getElementById('res-score').innerText = `${finalScore} / 100`;
+      document.getElementById('res-best').innerText = `BEST: ${Math.max(finalScore, prevBest)} / 100`;
+      document.getElementById('result-screen').style.display = 'flex';
+      document.getElementById('menu-btn').style.display = 'none';
+    }
+
+    // --- GAME LOOP ---
+    function gameLoop(now) {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      if (isPlaying) {
+        updateSpawner(dt);
+
+        ctx.fillStyle = '#0f0f12';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Render Lanes
+        currentLanes.forEach((lane, i) => {
+          ctx.fillStyle = activeLanes[i] ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.015)';
+          ctx.fillRect(lane.x, 0, lane.width, canvas.height);
+
+          ctx.strokeStyle = activeLanes[i] ? lane.color : 'rgba(255, 255, 255, 0.2)';
+          ctx.lineWidth = activeLanes[i] ? 4 : 2;
+          ctx.strokeRect(lane.x + 4, TARGET_Y - 20, lane.width - 8, 40);
+
+          if (activeLanes[i]) {
+            ctx.fillStyle = lane.color;
+            ctx.globalAlpha = 0.25;
+            ctx.fillRect(lane.x + 4, TARGET_Y - 20, lane.width - 8, 40);
+            ctx.globalAlpha = 1.0;
+          }
+        });
+
+        // Update & Render Notes
+        for (let i = notes.length - 1; i >= 0; i--) {
+          const note = notes[i];
+          note.y += levelSpeed * dt;
+
+          const lane = currentLanes[note.lane];
+
+          if (!note.hit && lane) {
+            ctx.fillStyle = lane.color;
+            ctx.shadowColor = lane.color;
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.roundRect(lane.x + 8, note.y - 14, lane.width - 16, 28, 6);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+
+          if (note.y > TARGET_Y + 45 && !note.hit && !note.missed) {
+            note.missed = true; combo = 0;
+            setJudgment('MISS', '#ef4444');
+            recordEndlessAccuracy(0.0);
+            playSound(120, 'sawtooth', 0.1, 0.06);
+          }
+
+          if (note.y > canvas.height + 40 || note.hit) {
+            notes.splice(i, 1);
+          }
+        }
+
+        // Render Burst Particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx * dt; p.y += p.vy * dt;
+          p.life -= dt * 2.5;
+
+          if (p.life <= 0) { particles.splice(i, 1); continue; }
+          ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 1.0;
+        }
+
+        // HUD Render
+        ctx.fillStyle = '#fff'; ctx.font = '900 22px system-ui'; ctx.textAlign = 'left';
+        
+        if (gameMode === 'CAMPAIGN') {
+          const lvl = CAMPAIGN_LEVELS[currentCampaignIdx];
+          const currScore = Math.min(100, Math.round((score / maxPossiblePoints) * 100));
+          ctx.fillText(`SCORE: ${currScore}/100`, 20, 40);
+          ctx.font = '700 13px system-ui'; ctx.fillStyle = lvl.color;
+          ctx.fillText(`${lvl.name}`, 20, 62);
+
+          // Check Win Condition
+          if (spawnedNotesCount >= lvl.totalNotes && notes.length === 0) {
+            finishCampaignLevel();
+          }
+        } else {
+          ctx.fillText(`${score}`, 20, 40);
+          ctx.font = '700 13px system-ui'; ctx.fillStyle = '#a855f7';
+          ctx.fillText(`AI LVL: ${AI.level}/10`, 20, 62);
+        }
+
+        if (combo > 2) {
+          ctx.textAlign = 'right'; ctx.font = '900 24px system-ui';
+          ctx.fillStyle = '#ec4899'; ctx.fillText(`${combo}x`, canvas.width - 20, 40);
+        }
+
+        if (judgmentText.alpha > 0) {
+          ctx.save();
+          ctx.translate(canvas.width / 2, TARGET_Y - 90);
+          ctx.scale(judgmentText.scale, judgmentText.scale);
+          ctx.font = '900 26px system-ui'; ctx.fillStyle = judgmentText.color;
+          ctx.textAlign = 'center'; ctx.globalAlpha = judgmentText.alpha;
+          ctx.fillText(judgmentText.text, 0, 0);
+          ctx.restore();
+
+          judgmentText.alpha -= dt * 2.5;
+          judgmentText.scale += (1.0 - judgmentText.scale) * 0.15;
+        }
+
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // Initial setup
+    renderCampaignList();
+  </script>
+</body>
+</html>
